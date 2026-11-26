@@ -14,9 +14,16 @@
   <!-- Chart.js via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <!-- Supabase JavaScript SDK v2 via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-service.js"></script>
+
   <!-- Firebase SDK (Compatível com navegador / CDN) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="./firebase-service.js"></script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/devicon/2.18.0/devicon.min.css">
 
   <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,9 +40,9 @@
           },
           colors: {
             brand: {
-              navy: '#0a2540',
-              blue: '#0284c7',
-              cyan: '#06b6d4',
+              navy: '#063b2d',
+              green: '#059669',
+              mint: '#34d399',
               orange: '#f97316',
               orangeDark: '#ea580c',
             }
@@ -80,14 +87,14 @@
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased selection:bg-sky-500 selection:text-white">
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
 
 <div id="app" class="min-h-screen flex flex-col">
 
   <!-- =====================================================================
        3. BANNER SUPERIOR (Área exclusiva com suporte a imagem personalizada)
        ===================================================================== -->
-  <header class="w-full bg-gradient-to-r from-[#081d38] via-[#0d325c] to-[#082242] text-white shadow-lg border-b border-sky-900/50 relative overflow-hidden">
+  <header class="w-full bg-gradient-to-r from-blue-600 via-blue-900 to-blue-600 text-white shadow-lg border-b border-emerald-900/50 relative overflow-hidden">
     <!-- Camada opcional de imagem personalizada (basta definir bannerImageUrl no script) -->
     <img
       v-if="config.bannerImageUrl"
@@ -103,7 +110,7 @@
         <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
-              <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#38bdf8" stroke-width="0.8"/>
+              <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#34d399" stroke-width="0.8"/>
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#grid)" />
@@ -112,13 +119,9 @@
 
       <!-- Identidade Principal -->
       <div class="text-center md:text-left z-10">
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/15 border border-sky-400/30 text-sky-300 text-xs font-medium mb-3">
-          <span class="w-2 h-2 rounded-full bg-orange-400 animate-pulse"></span>
-          Plataforma IoT &bull; Telemetria Ambiental em Tempo Real
-        </div>
         <div class="flex items-center justify-center md:justify-start gap-3">
           <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white">
-            Termo<span class="text-sky-400">Logic</span>
+            Termo<span class="text-white">Logic</span>
           </h1>
           <!-- Ícone discreto de termômetro ao lado do nome -->
           <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/15 text-orange-400">
@@ -129,27 +132,10 @@
           </div>
         </div>
         <p class="mt-2 text-sm sm:text-base text-slate-300 max-w-xl">
-          Sistema de monitoramento inteligente de temperatura e umidade com dupla redundância de dados (API REST Local &amp; Cloud Firestore).
+          Sistema de monitoramento inteligente de temperatura e umidade com dados do Supabase e do Cloud Firestore.
         </p>
       </div>
 
-      <!-- Indicadores Rápidos de Arquitetura no Banner -->
-      <div class="flex flex-wrap items-center justify-center gap-3 z-10">
-        <div class="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm text-left">
-          <div class="text-[11px] uppercase tracking-wider text-sky-300 font-semibold">Fonte Local</div>
-          <div class="text-sm font-bold text-white flex items-center gap-1.5 mt-0.5">
-            <span class="w-2 h-2 rounded-full" :class="sqliteStatus.connected ? 'bg-emerald-400' : 'bg-amber-400'"></span>
-            SQLite REST API
-          </div>
-        </div>
-        <div class="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm text-left">
-          <div class="text-[11px] uppercase tracking-wider text-orange-300 font-semibold">Fonte Nuvem</div>
-          <div class="text-sm font-bold text-white flex items-center gap-1.5 mt-0.5">
-            <span class="w-2 h-2 rounded-full" :class="firestoreStatus.connected ? 'bg-emerald-400' : 'bg-amber-400'"></span>
-            Firebase Firestore
-          </div>
-        </div>
-      </div>
     </div>
   </header>
 
@@ -159,70 +145,30 @@
   <div class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-2 text-xs sm:text-sm text-slate-600">
-        <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
         </svg>
-        <span>Polling SQLite: <strong class="text-slate-800">{{ config.sqlitePollingSeconds }}s</strong></span>
+        <span>Supabase: <strong class="text-slate-800">consulta a cada 30 segundos</strong></span>
         <span class="text-slate-300">|</span>
-        <span>Firestore: <strong class="text-orange-600">Tempo Real (onSnapshot)</strong></span>
+        <span>Firestore: <strong class="text-orange-600">atualização em tempo real</strong></span>
       </div>
 
       <div class="flex items-center gap-2">
-        <button
-          @click="showConfigModal = !showConfigModal"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-        >
-          <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-          </svg>
-          Parâmetros de Conexão
-        </button>
+
 
         <button
-          @click="fetchSqliteData"
-          :disabled="sqliteStatus.loading"
-          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white shadow-sm transition"
+          @click="fetchSupabaseData"
+          :disabled="supabaseStatus.loading || !supabaseStatus.configured"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white shadow-sm transition"
         >
-          <svg class="w-4 h-4" :class="{ 'animate-spin': sqliteStatus.loading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4" :class="{ 'animate-spin': supabaseStatus.loading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
           </svg>
-          {{ sqliteStatus.loading ? 'Atualizando SQLite...' : 'Atualizar SQLite Agora' }}
+          {{ supabaseStatus.loading ? 'Atualizando Supabase...' : 'Atualizar Supabase Agora' }}
         </button>
       </div>
     </div>
 
-    <!-- Painel Expansível para ajustar Endpoint/Coleção diretamente na interface -->
-    <div v-if="showConfigModal" class="bg-slate-900 text-slate-200 border-t border-slate-700">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-        <div>
-          <label class="block font-semibold text-sky-400 mb-1">URL Endpoint API SQLite (GET)</label>
-          <input
-            v-model="config.sqliteEndpoint"
-            type="text"
-            placeholder="Ex: http://localhost:3000/api/leituras"
-            class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white font-mono focus:outline-none focus:border-sky-500"
-          />
-        </div>
-        <div>
-          <label class="block font-semibold text-orange-400 mb-1">Coleção Firebase Firestore</label>
-          <input
-            v-model="config.firestoreCollection"
-            type="text"
-            placeholder="Ex: leituras"
-            class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white font-mono focus:outline-none focus:border-orange-500"
-          />
-        </div>
-        <div class="flex items-end gap-2">
-          <button
-            @click="applyConnectionSettings"
-            class="w-full py-2 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition"
-          >
-            Reconectar Fontes
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- =====================================================================
@@ -231,22 +177,22 @@
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
 
     <!-- ===================================================================
-         7. VISÃO COMPARATIVA ENTRE AS DUAS FONTES (SQLite x Firestore)
+         7. VISÃO COMPARATIVA ENTRE AS DUAS FONTES (Supabase x Firestore)
          =================================================================== -->
     <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
         <div>
           <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <span class="w-2.5 h-6 rounded-full bg-gradient-to-b from-sky-500 to-orange-500"></span>
-            Painel Comparativo Geral (SQLite vs. Firestore)
+            <span class="w-2.5 h-6 rounded-full bg-gradient-to-b from-emerald-500 to-orange-500"></span>
+            Painel Comparativo Geral (Supabase vs. Firestore)
           </h2>
           <p class="text-xs text-slate-500 mt-0.5">
             Consolidado independente indicando a origem exata de cada métrica registrada.
           </p>
         </div>
         <div class="flex items-center gap-3 text-xs font-medium">
-          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sky-50 text-sky-700 border border-sky-200">
-            <span class="w-2 h-2 rounded-full bg-sky-600"></span> SQLite ({{ sqliteStats.total }} reg.)
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span class="w-2 h-2 rounded-full bg-emerald-600"></span> Supabase ({{ supabaseStats.total }} reg.)
           </span>
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-orange-50 text-orange-700 border border-orange-200">
             <span class="w-2 h-2 rounded-full bg-orange-500"></span> Firestore ({{ firestoreStats.total }} reg.)
@@ -261,9 +207,9 @@
           <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Temperatura Atual</div>
           <div class="mt-2 flex items-baseline justify-between">
             <div>
-              <span class="text-[11px] font-bold text-sky-600 block">SQLite</span>
+              <span class="text-[11px] font-bold text-emerald-600 block">Supabase</span>
               <span class="text-xl font-extrabold text-slate-900 font-mono">
-                {{ formatValue(sqliteStats.currentTemp, '°C') }}
+                {{ formatValue(supabaseStats.currentTemp, '°C') }}
               </span>
             </div>
             <div class="text-right">
@@ -284,9 +230,9 @@
           <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Umidade Relativa Atual</div>
           <div class="mt-2 flex items-baseline justify-between">
             <div>
-              <span class="text-[11px] font-bold text-sky-600 block">SQLite</span>
+              <span class="text-[11px] font-bold text-emerald-600 block">Supabase</span>
               <span class="text-xl font-extrabold text-slate-900 font-mono">
-                {{ formatValue(sqliteStats.currentHumidity, '%') }}
+                {{ formatValue(supabaseStats.currentHumidity, '%') }}
               </span>
             </div>
             <div class="text-right">
@@ -307,9 +253,9 @@
           <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Temperatura Média Geral</div>
           <div class="mt-2 flex items-baseline justify-between">
             <div>
-              <span class="text-[11px] font-bold text-sky-600 block">Média SQLite</span>
+              <span class="text-[11px] font-bold text-emerald-600 block">Média Supabase</span>
               <span class="text-xl font-extrabold text-slate-900 font-mono">
-                {{ formatValue(sqliteStats.avgTemp, '°C') }}
+                {{ formatValue(supabaseStats.avgTemp, '°C') }}
               </span>
             </div>
             <div class="text-right">
@@ -322,7 +268,7 @@
           <div class="mt-2 pt-2 border-t border-slate-200/70 text-[11px] text-slate-500 flex justify-between">
             <span>Amplitude Máx/Mín:</span>
             <span class="font-mono text-slate-700">
-              {{ formatValue(sqliteStats.maxTemp, '°') }} / {{ formatValue(firestoreStats.maxTemp, '°') }}
+              {{ formatValue(supabaseStats.maxTemp, '°') }} / {{ formatValue(firestoreStats.maxTemp, '°') }}
             </span>
           </div>
         </div>
@@ -332,8 +278,8 @@
           <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total de Medições</div>
           <div class="mt-2 flex items-baseline justify-between">
             <div>
-              <span class="text-[11px] font-bold text-sky-600 block">SQLite API</span>
-              <span class="text-xl font-extrabold text-slate-900 font-mono">{{ sqliteStats.total }}</span>
+              <span class="text-[11px] font-bold text-emerald-600 block">Supabase API</span>
+              <span class="text-xl font-extrabold text-slate-900 font-mono">{{ supabaseStats.total }}</span>
             </div>
             <div class="text-right">
               <span class="text-[11px] font-bold text-orange-600 block">Firestore Cloud</span>
@@ -342,7 +288,7 @@
           </div>
           <div class="mt-2 pt-2 border-t border-slate-200/70 text-[11px] text-slate-500 flex justify-between">
             <span>Total combinado:</span>
-            <strong class="font-mono text-slate-800">{{ sqliteStats.total + firestoreStats.total }} registros</strong>
+            <strong class="font-mono text-slate-800">{{ supabaseStats.total + firestoreStats.total }} registros</strong>
           </div>
         </div>
       </div>
@@ -354,57 +300,55 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
       <!-- =================================================================
-           ÁREA 1 — DADOS DO SQLITE (API REST)
+           ÁREA 1 — DADOS DO SUPABASE
            ================================================================= -->
-      <section class="bg-white rounded-2xl shadow-sm border-t-4 border-t-sky-600 border border-slate-200 overflow-hidden flex flex-col">
+      <section class="bg-white rounded-2xl shadow-sm border-t-4 border-t-emerald-600 border border-slate-200 overflow-hidden flex flex-col">
         <!-- Cabeçalho da Fonte 1 -->
-        <div class="p-5 bg-gradient-to-r from-sky-50/80 to-white border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+        <div class="p-5 bg-gradient-to-r from-emerald-50/80 to-white border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-sm">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>
-              </svg>
+            <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm">
+            <i class="devicon-supabase-plain"></i>
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <h3 class="text-base font-bold text-slate-900">Fonte 1: Banco SQLite</h3>
-                <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-sky-100 text-sky-800">API REST</span>
+                <h3 class="text-base font-bold text-slate-900">Fonte 1: Banco Supabase</h3>
+                <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">Supabase JS</span>
               </div>
-              <p class="text-xs text-slate-500 font-mono truncate max-w-[260px]" :title="config.sqliteEndpoint">
-                GET {{ config.sqliteEndpoint }}
+              <p class="text-xs text-slate-500 font-mono truncate max-w-[260px]" :title="config.supabaseTable">
+                Tabela: {{ config.supabaseTable }}
               </p>
             </div>
           </div>
 
-          <!-- Status da Conexão SQLite -->
+          <!-- Status da Conexão Supabase -->
           <div class="flex items-center gap-2">
             <span
               class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
-              :class="sqliteStatus.connected ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'"
+              :class="supabaseStatus.connected ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : (supabaseStatus.configured ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-100 text-slate-600 border border-slate-200')"
             >
-              <span class="w-2 h-2 rounded-full" :class="sqliteStatus.connected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'"></span>
-              {{ sqliteStatus.connected ? 'Conectado' : 'Aguardando / Erro' }}
+              <span class="w-2 h-2 rounded-full" :class="supabaseStatus.connected ? 'bg-emerald-500 animate-pulse' : (supabaseStatus.configured ? 'bg-amber-500' : 'bg-slate-400')"></span>
+              {{ supabaseStatus.connected ? 'Conectado' : (supabaseStatus.configured ? 'Conectando...' : 'Aguardando configuracao') }}
             </span>
           </div>
         </div>
 
-        <!-- Alerta de Erro Independente (SQLite) -->
-        <div v-if="sqliteStatus.error" class="mx-5 mt-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5">
+        <!-- Alerta de Erro Independente (Supabase) -->
+        <div v-if="supabaseStatus.error" class="mx-5 mt-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5">
           <svg class="w-4 h-4 text-rose-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
           <div>
-            <strong class="block font-semibold">Falha na requisição GET (SQLite API):</strong>
-            <span>{{ sqliteStatus.error }}</span>
+            <strong class="block font-semibold">Falha na requisição GET (Supabase API):</strong>
+            <span>{{ supabaseStatus.error }}</span>
           </div>
         </div>
 
-        <!-- Corpo Principal SQLite: Termômetro Visual + Indicadores -->
+        <!-- Corpo Principal Supabase: Termômetro Visual + Indicadores -->
         <div class="p-5 grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
-          <!-- 8. Termômetro Visual SVG (SQLite) -->
+          <!-- 8. Termômetro Visual SVG (Supabase) -->
           <div class="sm:col-span-5 flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-50 border border-slate-200/70">
-            <span class="text-xs font-bold uppercase tracking-wider text-sky-700 mb-2">Termômetro SQLite</span>
-            <svg class="w-28 h-52" viewBox="0 0 100 200" aria-label="Termômetro SQLite">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-2">Termômetro Supabase</span>
+            <svg class="w-28 h-52" viewBox="0 0 100 200" aria-label="Termômetro Supabase">
               <!-- Escala graduada -->
               <g stroke="#94a3b8" stroke-width="1.5" font-size="8" fill="#64748b" font-family="JetBrains Mono">
                 <line x1="62" y1="30" x2="72" y2="30" /><text x="75" y="33">50°</text>
@@ -421,88 +365,88 @@
               <!-- Coluna de mercúrio dinâmica -->
               <rect
                 x="42"
-                :y="sqliteThermometer.y"
+                :y="supabaseThermometer.y"
                 width="12"
-                :height="sqliteThermometer.height"
+                :height="supabaseThermometer.height"
                 rx="6"
-                :fill="sqliteThermometer.color"
+                :fill="supabaseThermometer.color"
                 class="mercury-fill"
               />
               <!-- Bulbo interno colorido -->
-              <circle cx="48" cy="166" r="15" :fill="sqliteThermometer.color" class="bulb-fill" />
+              <circle cx="48" cy="166" r="15" :fill="supabaseThermometer.color" class="bulb-fill" />
               <!-- Reflexo de vidro -->
               <rect x="43" y="26" width="3" height="118" rx="1.5" fill="#ffffff" opacity="0.45" />
             </svg>
             <div class="mt-1 text-center">
               <span class="text-2xl font-extrabold font-mono text-slate-900">
-                {{ formatValue(sqliteStats.currentTemp, '°C') }}
+                {{ formatValue(supabaseStats.currentTemp, '°C') }}
               </span>
-              <span class="block text-[11px] font-medium" :style="{ color: sqliteThermometer.color }">
-                {{ sqliteThermometer.label }}
+              <span class="block text-[11px] font-medium" :style="{ color: supabaseThermometer.color }">
+                {{ supabaseThermometer.label }}
               </span>
             </div>
           </div>
 
-          <!-- Grid de Indicadores Estatísticos SQLite -->
+          <!-- Grid de Indicadores Estatísticos Supabase -->
           <div class="sm:col-span-7 grid grid-cols-2 gap-3">
-            <div class="p-3 rounded-xl bg-sky-50/70 border border-sky-100">
-              <span class="text-[11px] font-semibold text-sky-700 block">Umidade Atual</span>
+            <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-100">
+              <span class="text-[11px] font-semibold text-emerald-700 block">Umidade Atual</span>
               <span class="text-xl font-extrabold font-mono text-slate-900 mt-0.5 block">
-                {{ formatValue(sqliteStats.currentHumidity, '%') }}
+                {{ formatValue(supabaseStats.currentHumidity, '%') }}
               </span>
             </div>
 
             <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
               <span class="text-[11px] font-semibold text-slate-500 block">Total Medições</span>
               <span class="text-xl font-extrabold font-mono text-slate-900 mt-0.5 block">
-                {{ sqliteStats.total }}
+                {{ supabaseStats.total }}
               </span>
             </div>
 
             <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
               <span class="text-[11px] font-semibold text-slate-500 block">Temp. Máxima</span>
               <span class="text-base font-bold font-mono text-orange-600 mt-0.5 block">
-                {{ formatValue(sqliteStats.maxTemp, '°C') }}
+                {{ formatValue(supabaseStats.maxTemp, '°C') }}
               </span>
             </div>
 
             <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
               <span class="text-[11px] font-semibold text-slate-500 block">Temp. Mínima</span>
-              <span class="text-base font-bold font-mono text-sky-600 mt-0.5 block">
-                {{ formatValue(sqliteStats.minTemp, '°C') }}
+              <span class="text-base font-bold font-mono text-emerald-600 mt-0.5 block">
+                {{ formatValue(supabaseStats.minTemp, '°C') }}
               </span>
             </div>
 
             <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
               <span class="text-[11px] font-semibold text-slate-500 block">Temp. Média</span>
               <span class="text-base font-bold font-mono text-slate-800 mt-0.5 block">
-                {{ formatValue(sqliteStats.avgTemp, '°C') }}
+                {{ formatValue(supabaseStats.avgTemp, '°C') }}
               </span>
             </div>
 
             <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
               <span class="text-[11px] font-semibold text-slate-500 block">Dispositivo</span>
-              <span class="text-xs font-bold font-mono text-slate-800 mt-1 block truncate" :title="sqliteStats.lastDevice">
-                {{ sqliteStats.lastDevice || '—' }}
+              <span class="text-xs font-bold font-mono text-slate-800 mt-1 block truncate" :title="supabaseStats.lastDevice">
+                {{ supabaseStats.lastDevice || '—' }}
               </span>
             </div>
 
             <div class="col-span-2 p-3 rounded-xl bg-slate-50 border border-slate-200/70 flex items-center justify-between">
               <span class="text-[11px] font-semibold text-slate-500">Última Atualização:</span>
               <span class="text-xs font-mono font-semibold text-slate-800">
-                {{ sqliteStats.lastUpdate || 'Aguardando dados...' }}
+                {{ supabaseStats.lastUpdate || 'Aguardando dados...' }}
               </span>
             </div>
           </div>
         </div>
 
-        <!-- Tabela de Registros SQLite -->
+        <!-- Tabela de Registros Supabase -->
         <div class="px-5 pb-5">
           <div class="flex items-center justify-between mb-2">
             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Registros Recebidos (SQLite REST API)
+              Registros Recebidos (Supabase REST API)
             </h4>
-            <span class="text-[11px] text-slate-400">Exibindo até 50 mais recentes</span>
+            <span class="text-[11px] text-slate-400">Exibindo até {{ config.firestoreDisplayLimit }} mais recentes</span>
           </div>
 
           <div class="border border-slate-200 rounded-xl overflow-hidden">
@@ -518,19 +462,19 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 font-mono">
-                  <tr v-if="sqliteRecords.length === 0">
+                  <tr v-if="supabaseRecords.length === 0">
                     <td colspan="5" class="py-8 text-center text-slate-400 font-sans">
-                      {{ sqliteStatus.loading ? 'Consultando API SQLite...' : 'Nenhum registro recebido da API SQLite.' }}
+                      {{ supabaseStatus.loading ? 'Consultando tabela do Supabase...' : (!supabaseStatus.configured ? 'Aguardando URL e chave pública do Supabase no código.' : 'Nenhum registro encontrado na tabela "' + config.supabaseTable + '".') }}
                     </td>
                   </tr>
                   <tr
-                    v-for="(item, index) in sqliteRecords.slice(0, 50)"
+                    v-for="(item, index) in supabaseRecords.slice(0, 50)"
                     :key="item.id || index"
-                    class="hover:bg-sky-50/50 transition"
+                    class="hover:bg-emerald-50/50 transition"
                   >
                     <td class="py-2 px-3 font-sans font-medium text-slate-700">{{ item.dispositivo }}</td>
                     <td class="py-2 px-3 font-bold text-slate-900">{{ item.temperatura.toFixed(1) }} °C</td>
-                    <td class="py-2 px-3 text-sky-700 font-semibold">{{ item.umidade.toFixed(1) }} %</td>
+                    <td class="py-2 px-3 text-emerald-700 font-semibold">{{ item.umidade.toFixed(1) }} %</td>
                     <td class="py-2 px-3 text-slate-600">{{ item.data }}</td>
                     <td class="py-2 px-3 text-slate-600">{{ item.hora }}</td>
                   </tr>
@@ -548,10 +492,8 @@
         <!-- Cabeçalho da Fonte 2 -->
         <div class="p-5 bg-gradient-to-r from-orange-50/80 to-white border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shadow-sm">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
-              </svg>
+            <div class="w-10 h-10 rounded-xl bg-red-900 text-white flex items-center justify-center shadow-sm">
+              <img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/firebase.svg" alt="Firebase" class="w-6 h-6 object-contain">
             </div>
             <div>
               <div class="flex items-center gap-2">
@@ -559,7 +501,7 @@
                 <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-orange-100 text-orange-800">Cloud SDK</span>
               </div>
               <p class="text-xs text-slate-500 font-mono">
-                Projeto: <strong class="text-slate-700">{{ firebaseConfig.projectId }}</strong> &bull; Coleção: <strong class="text-orange-600">{{ config.firestoreCollection }}</strong>
+                 &bull; Coleção: <strong class="text-orange-600">{{ config.firestoreCollection }}</strong>
               </p>
             </div>
           </div>
@@ -656,7 +598,7 @@
 
             <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
               <span class="text-[11px] font-semibold text-slate-500 block">Temp. Mínima</span>
-              <span class="text-base font-bold font-mono text-sky-600 mt-0.5 block">
+              <span class="text-base font-bold font-mono text-emerald-600 mt-0.5 block">
                 {{ formatValue(firestoreStats.minTemp, '°C') }}
               </span>
             </div>
@@ -712,7 +654,7 @@
                     </td>
                   </tr>
                   <tr
-                    v-for="(item, index) in firestoreRecords.slice(0, 50)"
+                    v-for="(item, index) in firestoreRecords.slice(0, config.firestoreDisplayLimit)"
                     :key="item.id || index"
                     class="hover:bg-orange-50/50 transition"
                   >
@@ -756,7 +698,7 @@
               <h3 class="text-sm font-bold text-slate-900">Evolução da Umidade Relativa (%)</h3>
               <p class="text-xs text-slate-500">Série histórica separada por fonte de dados</p>
             </div>
-            <span class="px-2.5 py-1 rounded-md bg-sky-50 text-sky-600 text-xs font-semibold">Chart.js</span>
+            <span class="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-xs font-semibold">Chart.js</span>
           </div>
           <div class="relative h-64 w-full">
             <canvas id="humidityEvolutionChart"></canvas>
@@ -764,16 +706,16 @@
         </div>
       </div>
 
-      <!-- Gráfico 3: Comparativo Direto SQLite x Firestore -->
+      <!-- Gráfico 3: Comparativo Direto Supabase x Firestore -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
-            <h3 class="text-sm font-bold text-slate-900">Comparativo Estatístico: SQLite vs. Firebase Firestore</h3>
+            <h3 class="text-sm font-bold text-slate-900">Comparativo Estatístico: Supabase vs. Firebase Firestore</h3>
             <p class="text-xs text-slate-500">Comparação de Temperatura Atual, Média, Máxima, Mínima e Umidade Atual entre as bases</p>
           </div>
           <div class="flex items-center gap-3 text-xs">
-            <span class="flex items-center gap-1.5 font-semibold text-sky-700">
-              <span class="w-3 h-3 rounded-sm bg-sky-600 inline-block"></span> SQLite API
+            <span class="flex items-center gap-1.5 font-semibold text-emerald-700">
+              <span class="w-3 h-3 rounded-sm bg-emerald-600 inline-block"></span> Supabase API
             </span>
             <span class="flex items-center gap-1.5 font-semibold text-orange-600">
               <span class="w-3 h-3 rounded-sm bg-orange-500 inline-block"></span> Firestore Cloud
@@ -795,7 +737,7 @@
         <strong class="text-slate-700">TermoLogic</strong> &mdash; Monitoramento Ambiental Inteligente
       </div>
       <div>
-        Arquitetura Híbrida: <span class="text-sky-600 font-semibold">SQLite REST</span> + <span class="text-orange-600 font-semibold">Firebase Firestore</span>
+        Arquitetura Híbrida: <span class="text-emerald-600 font-semibold">Supabase REST</span> + <span class="text-orange-600 font-semibold">Firebase Firestore</span>
       </div>
     </div>
   </footer>
@@ -818,45 +760,50 @@
         // Caso salve a imagem do banner na mesma pasta, coloque o nome dela aqui (ex: 'Gemini_Generated_Image_u9jcllu9jcllu9jc.jpeg')
         bannerImageUrl: '',
 
-        // 1. Configuração da API REST (SQLite)
-        sqliteEndpoint: 'http://localhost:3000/api/leituras',
-        sqlitePollingSeconds: 10,
+        // 1. Configuração da API REST (Supabase)
+        supabaseTable: 'medicoes',
+        supabasePollingSeconds: 30,
 
         // 2. Configuração da Coleção do Firebase Firestore
-        firestoreCollection: 'leituras',
-        firestoreOrderByField: 'timestamp', // Campo usado para ordenar no Firestore (se existir)
-        firestoreLimit: 50,
+        firestoreCollection: 'medicoes',
+        firestoreDisplayLimit: 30,
 
         // 3. Mapeamento flexível de campos (aceita variações comuns automaticamente)
         fieldMap: {
-          temperatura: ['temperatura', 'temp', 'temperature', 'valor_temp'],
+          temperatura: ['temperatura', 'temp', 'temp.', 'temperature', 'valor_temp'],
           umidade: ['umidade', 'umid', 'humidity', 'valor_umid'],
-          data: ['data', 'date', 'dia'],
-          hora: ['hora', 'time', 'horario'],
-          timestamp: ['timestamp', 'created_at', 'createdAt', 'data_hora', 'dataHora'],
+          data: ['data', 'Data', 'date', 'dia', 'data_leitura', 'dataLeitura'],
+          hora: ['hora', 'Hora', 'time', 'horario', 'hora_leitura', 'horaLeitura'],
+          timestamp: ['timestamp', 'created_at', 'createdAt', 'data_hora', 'dataHora', 'registrado_em'],
           dispositivo: ['dispositivo', 'device', 'device_id', 'deviceId', 'sensor', 'esp_id']
         }
       });
 
+      // URL do projeto e chave pública (publishable) do Supabase.
+      const supabaseConfig = {
+        url: 'https://hjwgfxzwgpmvktiqcoes.supabase.co',
+        anonKey: 'sb_publishable_hZIQR8fDdedT1RL7Pas4Jw_JTSOiaSr'
+      };
+
       // Credenciais oficiais fornecidas pelo usuário
       const firebaseConfig = {
-        apiKey: "AIzaSyBqtx4CJLJJD7KT0eyTpT50gk7E-ssSRmQ",
-        authDomain: "senai-2814a.firebaseapp.com",
-        projectId: "senai-2814a",
-        storageBucket: "senai-2814a.firebasestorage.app",
-        messagingSenderId: "895820254331",
-        appId: "1:895820254331:web:0ccc5edd8880f90f07a6de"
+        apiKey: "AIzaSyBQYYF3LqK9qRpxDGBlbcVglCpaONrqEd4",
+        authDomain: "monitor-ambiental-senai.firebaseapp.com",
+        projectId: "monitor-ambiental-senai",
+        storageBucket: "monitor-ambiental-senai.firebasestorage.app",
+        messagingSenderId: "1089678391917",
+        appId: "1:1089678391917:web:f8d2fb7f4e5e7dd20c1d64"
       };
 
       // =====================================================================
       // B. ESTADOS REATIVOS INDEPENDENTES
       // =====================================================================
-      const showConfigModal = ref(false);
-
-      const sqliteRecords = ref([]);
-      const sqliteStatus = reactive({
+      const supabaseRecords = ref([]);
+      const supabaseStatus = reactive({
         loading: false,
         connected: false,
+        configured: false,
+        message: 'Aguardando configuração do Supabase',
         error: null
       });
 
@@ -867,7 +814,9 @@
         error: null
       });
 
-      let sqliteIntervalId = null;
+      let supabaseClient = null;
+      let supabaseFetchInFlight = false;
+      let supabaseIntervalId = null;
       let firestoreUnsubscribe = null;
       let db = null;
 
@@ -877,7 +826,7 @@
       let comparisonChartInstance = null;
 
       // =====================================================================
-      // C. NORMALIZADOR INTELIGENTE DE REGISTROS (SQLite & Firestore)
+      // C. NORMALIZADOR INTELIGENTE DE REGISTROS (Supabase & Firestore)
       // =====================================================================
       function extractField(obj, possibleKeys) {
         for (const key of possibleKeys) {
@@ -885,6 +834,19 @@
             return obj[key];
           }
         }
+
+        // Aceita diferenças de maiúsculas, acentos e pontuação (ex.: "Temp.").
+        if (obj) {
+          const normalizeKey = (key) => String(key)
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '');
+          const aliases = new Set(possibleKeys.map(normalizeKey));
+          const matchingKey = Object.keys(obj).find((key) => aliases.has(normalizeKey(key)));
+          if (matchingKey !== undefined) return obj[matchingKey];
+        }
+
         return null;
       }
 
@@ -896,16 +858,8 @@
         let rawTime = extractField(rawItem, config.fieldMap.hora);
         const rawTs = extractField(rawItem, config.fieldMap.timestamp);
 
-        // Converte Timestamp do Firestore ou string ISO caso data/hora não venham separados
-        let parsedDateObj = null;
-        if (rawTs) {
-          if (typeof rawTs.toDate === 'function') {
-            parsedDateObj = rawTs.toDate();
-          } else {
-            const d = new Date(rawTs);
-            if (!isNaN(d.getTime())) parsedDateObj = d;
-          }
-        }
+        // Usa timestamp quando disponível; caso contrário, combina Data + Hora.
+        const parsedDateObj = parseRecordDateTime(rawTs || rawDate, rawTime);
 
         if (!rawDate && parsedDateObj) {
           rawDate = parsedDateObj.toLocaleDateString('pt-BR');
@@ -916,98 +870,165 @@
 
         return {
           id: rawItem.id || fallbackId,
-          temperatura: rawTemp !== null ? Number(rawTemp) : 0,
-          umidade: rawHum !== null ? Number(rawHum) : 0,
-          data: rawDate || '--/--/----',
-          hora: rawTime || '--:--:--',
+          temperatura: toFiniteNumber(rawTemp),
+          umidade: toFiniteNumber(rawHum),
+          data: formatDateField(rawDate) || '--/--/----',
+          hora: formatTimeField(rawTime) || '--:--:--',
           dispositivo: rawDevice ? String(rawDevice) : 'Sensor Padrão',
-          sortTime: parsedDateObj ? parsedDateObj.getTime() : 0
+          sortTime: parsedDateObj ? parsedDateObj.getTime() : 0,
+          liveOrder: 0
         };
       }
 
-      // =====================================================================
-      // D. INTEGRAÇÃO 1: API REST (SQLITE) COM FETCH + PREVENÇÃO DE CONCORRÊNCIA
-      // =====================================================================
-      async function fetchSqliteData() {
-        // Evita requisições simultâneas conforme requisito 10
-        if (sqliteStatus.loading) return;
+      function parseRecordDateTime(dateValue, timeValue) {
+        if (!dateValue) return null;
 
-        sqliteStatus.loading = true;
-        sqliteStatus.error = null;
-
-        try {
-          const response = await fetch(config.sqliteEndpoint, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' }
-          });
-
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status} — ${response.statusText || 'Erro ao consultar API'}`);
-          }
-
-          const payload = await response.json();
-
-          // Suporta retorno direto como Array [...] ou encapsulado { data: [...] } / { registros: [...] }
-          const list = Array.isArray(payload)
-            ? payload
-            : (payload.data || payload.registros || payload.leituras || []);
-
-          if (!Array.isArray(list)) {
-            throw new Error('Formato JSON inesperado retornado pela API SQLite.');
-          }
-
-          sqliteRecords.value = list.map((item, idx) => normalizeRecord(item, `sqlite-${idx}`));
-          sqliteStatus.connected = true;
-        } catch (err) {
-          sqliteStatus.connected = false;
-          sqliteStatus.error = err.message || 'Não foi possível conectar ao servidor da API SQLite.';
-        } finally {
-          sqliteStatus.loading = false;
+        if (typeof dateValue === 'number') {
+          const numericDate = new Date(dateValue);
+          return Number.isNaN(numericDate.getTime()) ? null : numericDate;
         }
+        if (typeof dateValue.toDate === 'function') {
+          const timestampDate = dateValue.toDate();
+          return Number.isNaN(timestampDate.getTime()) ? null : timestampDate;
+        }
+        if (dateValue instanceof Date) {
+          return Number.isNaN(dateValue.getTime()) ? null : dateValue;
+        }
+
+        const dateText = String(dateValue).trim();
+        const timeText = timeValue ? String(timeValue).trim() : '00:00:00';
+        const brazilianDate = dateText.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        let parsed;
+
+        if (brazilianDate) {
+          const [, day, month, year] = brazilianDate;
+          const [hours = '0', minutes = '0', seconds = '0'] = timeText.split(':');
+          parsed = new Date(Number(year), Number(month) - 1, Number(day), Number(hours), Number(minutes), Number(seconds));
+        } else if (/^\d{4}-\d{2}-\d{2}$/.test(dateText)) {
+          parsed = new Date(`${dateText}T${timeText}`);
+        } else {
+          parsed = new Date(dateText);
+        }
+
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+      }
+
+      function formatDateField(value) {
+        if (!value) return null;
+        if (typeof value.toDate === 'function') value = value.toDate();
+        return value instanceof Date ? value.toLocaleDateString('pt-BR') : String(value);
+      }
+
+      function formatTimeField(value) {
+        if (!value) return null;
+        if (typeof value.toDate === 'function') value = value.toDate();
+        return value instanceof Date ? value.toLocaleTimeString('pt-BR') : String(value);
+      }
+
+      function toFiniteNumber(value) {
+        if (value === null || value === undefined || value === '') return 0;
+        const parsed = typeof value === 'number'
+          ? value
+          : Number.parseFloat(String(value).trim().replace(',', '.'));
+        return Number.isFinite(parsed) ? parsed : 0;
       }
 
       // =====================================================================
-      // E. INTEGRAÇÃO 2: FIREBASE FIRESTORE (SDK OFICIAL + onSnapshot)
+      // D. INTEGRAÇÃO 1: SUPABASE (SELECT + REALTIME)
       // =====================================================================
+      function initSupabase() {
+        supabaseStatus.configured = Boolean(supabaseConfig.url && supabaseConfig.anonKey);
+        supabaseStatus.error = null;
+
+        if (!supabaseStatus.configured) {
+          supabaseClient = null;
+          supabaseRecords.value = [];
+          supabaseStatus.connected = false;
+          supabaseStatus.loading = false;
+          supabaseStatus.message = 'Aguardando URL e chave p?blica do Supabase no c?digo.';
+          return;
+        }
+
+        try {
+          supabaseClient = window.TermologicSupabase.connect(supabaseConfig);
+          supabaseStatus.message = 'Conectando ao Supabase...';
+          fetchSupabaseData();
+        } catch (err) {
+          supabaseStatus.connected = false;
+          supabaseStatus.loading = false;
+          supabaseStatus.message = 'Falha ao inicializar Supabase';
+          supabaseStatus.error = err.message;
+        }
+      }
+
+      async function fetchSupabaseData() {
+        if (!supabaseClient) {
+          initSupabase();
+          return;
+        }
+        if (supabaseFetchInFlight) return;
+
+        supabaseFetchInFlight = true;
+        supabaseStatus.loading = true;
+        supabaseStatus.error = null;
+
+        try {
+          const list = await window.TermologicSupabase.fetchRecords(
+            supabaseClient,
+            config.supabaseTable
+          );
+          console.log('DADOS RECEBIDOS DO SUPABASE:', list);
+
+        if (list.length > 0) {
+        console.log('COLUNAS DISPONÍVEIS:', Object.keys(list[0]));
+        console.table(list);
+      }
+          const records = list.map((item, index) => normalizeRecord(
+            item,
+            item.id || `supabase-${index}`
+          ));
+          records.sort((a, b) => b.sortTime - a.sortTime);
+          supabaseRecords.value = records;
+          supabaseStatus.connected = true;
+          supabaseStatus.message = `Polling ativo (${config.supabasePollingSeconds}s)`;
+        } catch (err) {
+          supabaseStatus.connected = false;
+          supabaseStatus.message = 'Nao foi possivel consultar o Supabase';
+          supabaseStatus.error = err.message || 'Falha ao ler a tabela do Supabase.';
+        } finally {
+          supabaseFetchInFlight = false;
+          supabaseStatus.loading = false;
+        }
+      }
+
       function initFirebase() {
         try {
-          if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-          }
-          db = firebase.firestore();
+          db = window.TermologicFirebase.connect(firebaseConfig);
           subscribeFirestore();
         } catch (err) {
           firestoreStatus.connected = false;
+          firestoreStatus.loading = false;
           firestoreStatus.error = `Falha ao inicializar Firebase SDK: ${err.message}`;
         }
       }
 
       function subscribeFirestore() {
-        if (!db) return;
-
-        // Encerra listener anterior caso exista
-        if (typeof firestoreUnsubscribe === 'function') {
-          firestoreUnsubscribe();
-          firestoreUnsubscribe = null;
+        if (!db) {
+          firestoreStatus.connected = false;
+          firestoreStatus.loading = false;
+          firestoreStatus.error = 'Firestore não foi inicializado.';
+          return;
         }
-
         firestoreStatus.loading = true;
         firestoreStatus.error = null;
 
         try {
-          const colRef = db.collection(config.firestoreCollection);
-
-          // Listener em tempo real (onSnapshot)
-          firestoreUnsubscribe = colRef.limit(config.firestoreLimit).onSnapshot(
-            (snapshot) => {
-              const docs = [];
-              snapshot.forEach((doc) => {
-                docs.push(normalizeRecord({ id: doc.id, ...doc.data() }, doc.id));
-              });
-
-              // Ordena do mais recente para o mais antigo caso haja timestamp válido
+          firestoreUnsubscribe = window.TermologicFirebase.subscribeCollection(
+            db,
+            config.firestoreCollection,
+            (documents) => {
+              const docs = documents.map((item) => normalizeRecord(item, item.id));
               docs.sort((a, b) => b.sortTime - a.sortTime);
-
               firestoreRecords.value = docs;
               firestoreStatus.connected = true;
               firestoreStatus.loading = false;
@@ -1022,15 +1043,10 @@
         } catch (err) {
           firestoreStatus.connected = false;
           firestoreStatus.loading = false;
-          firestoreStatus.error = err.message;
+          firestoreStatus.error = `${err.code || 'Erro Firestore'}: ${err.message}`;
         }
       }
 
-      function applyConnectionSettings() {
-        fetchSqliteData();
-        subscribeFirestore();
-        showConfigModal.value = false;
-      }
 
       // =====================================================================
       // F. CÁLCULO DE ESTATÍSTICAS INDEPENDENTES (COMPUTED)
@@ -1068,19 +1084,19 @@
         };
       }
 
-      const sqliteStats = computed(() => computeSourceStats(sqliteRecords.value));
+      const supabaseStats = computed(() => computeSourceStats(supabaseRecords.value));
       const firestoreStats = computed(() => computeSourceStats(firestoreRecords.value));
 
       // Comparativos entre as duas fontes
       const tempDelta = computed(() => {
-        if (sqliteStats.value.currentTemp === null || firestoreStats.value.currentTemp === null) return '—';
-        const diff = Math.abs(sqliteStats.value.currentTemp - firestoreStats.value.currentTemp);
+        if (supabaseStats.value.currentTemp === null || firestoreStats.value.currentTemp === null) return '—';
+        const diff = Math.abs(supabaseStats.value.currentTemp - firestoreStats.value.currentTemp);
         return `${diff.toFixed(1)} °C`;
       });
 
       const humidityDelta = computed(() => {
-        if (sqliteStats.value.currentHumidity === null || firestoreStats.value.currentHumidity === null) return '—';
-        const diff = Math.abs(sqliteStats.value.currentHumidity - firestoreStats.value.currentHumidity);
+        if (supabaseStats.value.currentHumidity === null || firestoreStats.value.currentHumidity === null) return '—';
+        const diff = Math.abs(supabaseStats.value.currentHumidity - firestoreStats.value.currentHumidity);
         return `${diff.toFixed(1)} %`;
       });
 
@@ -1117,7 +1133,7 @@
         return { y, height, color, label };
       }
 
-      const sqliteThermometer = computed(() => computeThermometerProps(sqliteStats.value.currentTemp));
+      const supabaseThermometer = computed(() => computeThermometerProps(supabaseStats.value.currentTemp));
       const firestoreThermometer = computed(() => computeThermometerProps(firestoreStats.value.currentTemp));
 
       function formatValue(val, suffix) {
@@ -1160,10 +1176,10 @@
               labels: [],
               datasets: [
                 {
-                  label: 'SQLite (°C)',
+                  label: 'Supabase (°C)',
                   data: [],
-                  borderColor: '#0284c7',
-                  backgroundColor: 'rgba(2, 132, 199, 0.12)',
+                  borderColor: '#059669',
+                  backgroundColor: 'rgba(5, 150, 105, 0.12)',
                   tension: 0.35,
                   fill: true,
                   pointRadius: 3
@@ -1192,10 +1208,10 @@
               labels: [],
               datasets: [
                 {
-                  label: 'SQLite (%)',
+                  label: 'Supabase (%)',
                   data: [],
-                  borderColor: '#0ea5e9',
-                  backgroundColor: 'rgba(14, 165, 233, 0.12)',
+                  borderColor: '#10b981',
+                  backgroundColor: 'rgba(16, 185, 129, 0.12)',
                   tension: 0.35,
                   fill: true,
                   pointRadius: 3
@@ -1215,7 +1231,7 @@
           });
         }
 
-        // 3. Comparativo SQLite x Firestore
+        // 3. Comparativo Supabase x Firestore
         const ctxComp = document.getElementById('comparisonBarChart');
         if (ctxComp) {
           comparisonChartInstance = new Chart(ctxComp, {
@@ -1224,9 +1240,9 @@
               labels: ['Temp. Atual (°C)', 'Temp. Média (°C)', 'Temp. Máxima (°C)', 'Temp. Mínima (°C)', 'Umidade Atual (%)'],
               datasets: [
                 {
-                  label: 'SQLite REST API',
+                  label: 'Supabase REST API',
                   data: [0, 0, 0, 0, 0],
-                  backgroundColor: '#0284c7',
+                  backgroundColor: '#059669',
                   borderRadius: 6
                 },
                 {
@@ -1246,29 +1262,29 @@
       }
 
       function updateCharts() {
-        const sqliteChrono = [...sqliteRecords.value].slice(0, 15).reverse();
+        const supabaseChrono = [...supabaseRecords.value].slice(0, 15).reverse();
         const firestoreChrono = [...firestoreRecords.value].slice(0, 15).reverse();
 
         // Usa os horários da fonte que tiver mais registros recentes como eixo X
-        const baseSeries = sqliteChrono.length >= firestoreChrono.length ? sqliteChrono : firestoreChrono;
+        const baseSeries = supabaseChrono.length >= firestoreChrono.length ? supabaseChrono : firestoreChrono;
         const labels = baseSeries.map(r => r.hora);
 
         if (tempChartInstance) {
           tempChartInstance.data.labels = labels;
-          tempChartInstance.data.datasets[0].data = sqliteChrono.map(r => r.temperatura);
+          tempChartInstance.data.datasets[0].data = supabaseChrono.map(r => r.temperatura);
           tempChartInstance.data.datasets[1].data = firestoreChrono.map(r => r.temperatura);
           tempChartInstance.update('none');
         }
 
         if (humidityChartInstance) {
           humidityChartInstance.data.labels = labels;
-          humidityChartInstance.data.datasets[0].data = sqliteChrono.map(r => r.umidade);
+          humidityChartInstance.data.datasets[0].data = supabaseChrono.map(r => r.umidade);
           humidityChartInstance.data.datasets[1].data = firestoreChrono.map(r => r.umidade);
           humidityChartInstance.update('none');
         }
 
         if (comparisonChartInstance) {
-          const s = sqliteStats.value;
+          const s = supabaseStats.value;
           const f = firestoreStats.value;
           comparisonChartInstance.data.datasets[0].data = [
             s.currentTemp || 0,
@@ -1288,7 +1304,7 @@
         }
       }
 
-      watch([sqliteRecords, firestoreRecords], () => {
+      watch([supabaseRecords, firestoreRecords], () => {
         updateCharts();
       }, { deep: true });
 
@@ -1297,35 +1313,30 @@
       // =====================================================================
       onMounted(() => {
         initCharts();
-        fetchSqliteData();
+        initSupabase();
         initFirebase();
-
-        sqliteIntervalId = setInterval(() => {
-          fetchSqliteData();
-        }, config.sqlitePollingSeconds * 1000);
+        supabaseIntervalId = setInterval(fetchSupabaseData, config.supabasePollingSeconds * 1000);
       });
 
       onUnmounted(() => {
-        if (sqliteIntervalId) clearInterval(sqliteIntervalId);
+        if (supabaseIntervalId) clearInterval(supabaseIntervalId);
         if (typeof firestoreUnsubscribe === 'function') firestoreUnsubscribe();
       });
 
       return {
         config,
         firebaseConfig,
-        showConfigModal,
-        sqliteRecords,
-        sqliteStatus,
-        sqliteStats,
-        sqliteThermometer,
+        supabaseRecords,
+        supabaseStatus,
+        supabaseStats,
+        supabaseThermometer,
         firestoreRecords,
         firestoreStatus,
         firestoreStats,
         firestoreThermometer,
         tempDelta,
         humidityDelta,
-        fetchSqliteData,
-        applyConnectionSettings,
+        fetchSupabaseData,
         formatValue
       };
     }
